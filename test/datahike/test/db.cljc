@@ -22,7 +22,8 @@
 
 
 ;; whitebox test to confirm that hash cache caches
-(deftest test-db-hash-cache
+;; NOTE: rolling hash, eagerly computed
+#_(deftest test-db-hash-cache
   (let [db (db/empty-db)]
     (is (= 0         @(.-hash db)))
     (let [h (hash db)]

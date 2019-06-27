@@ -139,7 +139,7 @@
 
 ;; ----------------------------------------------------------------------------
 
-(declare hash-db hash-fdb equiv-db empty-db resolve-datom validate-attr components->pattern indexing?)
+(declare hash-fdb equiv-db empty-db resolve-datom validate-attr components->pattern indexing?)
 #?(:cljs (declare pr-db))
 
 
@@ -158,7 +158,7 @@
 
 (defrecord-updatable DB [schema eavt aevt avet max-eid max-tx rschema hash config]
   #?@(:cljs
-      [IHash (-hash [db] (hash-db db))
+      [IHash (-hash [db] hash)
        IEquiv (-equiv [db other] (equiv-db db other))
        ISeqable (-seq [db] (-seq (.-eavt db)))
        IReversible (-rseq [db] (-rseq (.-eavt db)))
@@ -170,8 +170,8 @@
        (-persistent! [db] (db-persistent! db))]
 
       :clj
-      [Object (hashCode [db] (hash-db db))
-       clojure.lang.IHashEq (hasheq [db] (hash-db db))
+      [Object (hashCode [db] hash)
+       clojure.lang.IHashEq (hasheq [db] hash)
        clojure.lang.Seqable (seq [db] (-seq eavt))
        clojure.lang.IPersistentCollection
        (count [db] (-count eavt))
@@ -385,7 +385,7 @@
      :avet (di/empty-index index :avet)
      :max-eid      e0
      :max-tx       tx0
-     :hash         (atom 0)})))
+     :hash         0})))
 
 (defn init-max-eid [eavt]
   ;; solved with reserse slice first in datascript
@@ -420,7 +420,7 @@
                :avet         avet
                :max-eid      max-eid
                :max-tx       max-tx
-               :hash         (atom 0)}))))
+               :hash         (reduce #(combine-hashes %1 (hash %2)) 0 datoms)}))))
 
 (defn- equiv-db-index [x y]
   (loop [xs (seq x)
@@ -430,14 +430,8 @@
       (= (first xs) (first ys)) (recur (next xs) (next ys))
       :else false)))
 
-(defn- hash-db [^DB db]
-  (let [h @(.-hash db)]
-    (if (zero? h)
-      (reset! (.-hash db) (combine-hashes (hash (.-schema db))
-                                          (hash (-datoms db :eavt []))))
-      h)))
-
-(defn- hash-fdb [^FilteredDB db]
+(defn- hash-fdb
+  [^FilteredDB db]
   (let [h @(.-hash db)
         datoms (or (-datoms db :eavt []) #{})]
     (if (zero? h)
@@ -679,13 +673,13 @@
         true (update-in [:aevt] #(di/-insert % datom :aevt))
         indexing? (update-in [:avet] #(di/-insert % datom :avet))
         true (advance-max-eid (.-e datom))
-        true (assoc :hash (atom 0)))
+        true (update :hash #(combine-hashes %1 (hash datom))))
       (if-some [removing ^Datom (first (-search db [(.-e datom) (.-a datom) (.-v datom)]))]
         (cond-> db
           true (update-in [:eavt] #(di/-remove % removing :eavt))
           true (update-in [:aevt] #(di/-remove % removing :aevt))
           indexing? (update-in [:avet] #(di/-remove % removing :avet))
-          true (assoc :hash (atom 0)))
+          true (update :hash #(combine-hashes %1 (hash removing))))
         db))))
 
 (defn- transact-report [report datom]
