@@ -19,16 +19,6 @@
 (deftest test-defrecord-updatable
   (is (= 0xBEEF (-> (map->HashBeef {:x :ignored}) hash))))
 
-
-
-;; whitebox test to confirm that hash cache caches
-;; NOTE: rolling hash, eagerly computed
-#_(deftest test-db-hash-cache
-  (let [db (db/empty-db)]
-    (is (= 0         @(.-hash db)))
-    (let [h (hash db)]
-      (is (= h @(.-hash db))))))
-
 (defn- now []
   #?(:clj  (System/currentTimeMillis)
      :cljs (.getTime (js/Date.))))

@@ -139,7 +139,7 @@
 
 ;; ----------------------------------------------------------------------------
 
-(declare hash-fdb equiv-db empty-db resolve-datom validate-attr components->pattern indexing?)
+(declare hash-datoms hash-fdb equiv-db empty-db resolve-datom validate-attr components->pattern indexing?)
 #?(:cljs (declare pr-db))
 
 
@@ -420,7 +420,7 @@
                :avet         avet
                :max-eid      max-eid
                :max-tx       max-tx
-               :hash         (reduce #(combine-hashes %1 (hash %2)) 0 datoms)}))))
+               :hash         (hash-datoms datoms)}))))
 
 (defn- equiv-db-index [x y]
   (loop [xs (seq x)
@@ -430,14 +430,17 @@
       (= (first xs) (first ys)) (recur (next xs) (next ys))
       :else false)))
 
+(defn- hash-datoms
+  [datoms]
+  (reduce #(combine-hashes %1 (hash %2)) 0 datoms))
+
 (defn- hash-fdb
   [^FilteredDB db]
-  (let [h @(.-hash db)
-        datoms (or (-datoms db :eavt []) #{})]
+  (let [h @(.-hash db)]
     (if (zero? h)
-      (let [datoms (or (-datoms db :eavt []) #{})]
-        (reset! (.-hash db) (combine-hashes (hash (-schema db))
-                                            (hash-unordered-coll datoms))))
+      (let [datoms (-datoms db :eavt [])
+            h (hash-datoms datoms)]
+        (reset! (.-hash db) h))
       h)))
 
 (defn- equiv-db [db other]
@@ -679,7 +682,10 @@
           true (update-in [:eavt] #(di/-remove % removing :eavt))
           true (update-in [:aevt] #(di/-remove % removing :aevt))
           indexing? (update-in [:avet] #(di/-remove % removing :avet))
-          true (update :hash #(combine-hashes %1 (hash removing))))
+          ; NOTE:
+          ; In order for the hashing of DB to be consistent with FilteredDB, we need to recompute the hash when removing datoms. for example with `:db.fn/retractEntity`, see https://github.com/replikativ/datahike/issues/38
+          true (assoc :hash (hash-datoms (filter #(not= % removing)
+                                                 (-datoms db :eavt [])))))
         db))))
 
 (defn- transact-report [report datom]

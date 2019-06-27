@@ -64,8 +64,7 @@
              (d/filter empty-db (constantly true))
              (d/filter db (constantly false)))))
 
-    ;; TODO: fix hashing for equivalent functions, see https://github.com/replikativ/datahike/issues/38
-    #_(testing "hash"
+    (testing "hash"
       (is (= (hash (d/db-with db [[:db.fn/retractEntity 2]]))
              (hash (d/filter db remove-ivan))))
       (is (= (hash empty-db)
@@ -83,3 +82,11 @@
       (is (= ["Petr" "Oleg" "Ivan"] (names db)))
       (is (= ["Petr" "Ivan"]        (names (-> db (d/filter has-age?)))))
       (is (= ["Petr"]               (names (-> db (d/filter has-age?) (d/filter adult?))))))))
+
+;; whitebox test to confirm that hash cache caches
+(deftest test-filtered-db-hash-cache
+  (let [db (db/empty-db)
+        fdb (d/filter db (constantly true))]
+    (is (= 0         @(.-hash fdb)))
+    (let [h (hash fdb)]
+      (is (= h @(.-hash fdb))))))
