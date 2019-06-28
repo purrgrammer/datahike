@@ -261,7 +261,7 @@
 ;; ----------------------------------------------------------------------------
 (defrecord-updatable FilteredDB [unfiltered-db pred hash]
                      #?@(:cljs
-                         [IHash (-hash [db] (hash-fdb db))
+                         [;IHash (-hash [db] (hash-fdb db))
                           IEquiv (-equiv [db other] (equiv-db db other))
                           ISeqable (-seq [db] (-datoms db :eavt []))
                           ICounted (-count [db] (count (-datoms db :eavt [])))
@@ -277,9 +277,9 @@
                           (-assoc [_ _ _] (throw (js/Error. "-assoc is not supported on FilteredDB")))]
 
                          :clj
-                         [Object (hashCode [db] (hash-fdb db))
+                         [;Object (hashCode [db] (hash-fdb db))
 
-                          clojure.lang.IHashEq (hasheq [db] (hash-fdb db))
+                          ;clojure.lang.IHashEq (hasheq [db] (hash-fdb db))
 
                           clojure.lang.IPersistentCollection
                           (count [db] (count (-datoms db :eavt [])))
@@ -434,9 +434,9 @@
   [datoms]
   (reduce #(combine-hashes %1 (hash %2)) 0 datoms))
 
-(defn- hash-fdb
+#_(defn- hash-fdb
   [^FilteredDB db]
-  (let [h @(.-hash db)]
+  (let [h @(.-hash db) ]
     (if (zero? h)
       (let [datoms (-datoms db :eavt [])
             h (hash-datoms datoms)]
@@ -682,10 +682,7 @@
           true (update-in [:eavt] #(di/-remove % removing :eavt))
           true (update-in [:aevt] #(di/-remove % removing :aevt))
           indexing? (update-in [:avet] #(di/-remove % removing :avet))
-          ; NOTE:
-          ; In order for the hashing of DB to be consistent with FilteredDB, we need to recompute the hash when removing datoms. for example with `:db.fn/retractEntity`, see https://github.com/replikativ/datahike/issues/38
-          true (assoc :hash (hash-datoms (filter #(not= % removing)
-                                                 (-datoms db :eavt [])))))
+          true (update :hash #(combine-hashes %1 (hash removing))))
         db))))
 
 (defn- transact-report [report datom]

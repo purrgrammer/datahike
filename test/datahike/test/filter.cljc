@@ -64,7 +64,7 @@
              (d/filter empty-db (constantly true))
              (d/filter db (constantly false)))))
 
-    (testing "hash"
+    #_(testing "hash"
       (is (= (hash (d/db-with db [[:db.fn/retractEntity 2]]))
              (hash (d/filter db remove-ivan))))
       (is (= (hash empty-db)
@@ -84,7 +84,7 @@
       (is (= ["Petr"]               (names (-> db (d/filter has-age?) (d/filter adult?))))))))
 
 ;; whitebox test to confirm that hash cache caches
-(deftest test-filtered-db-hash-cache
+#_(deftest test-filtered-db-hash-cache
   (let [db (db/empty-db)
         fdb (d/filter db (constantly true))]
     (is (= 0         @(.-hash fdb)))
