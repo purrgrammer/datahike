@@ -15,7 +15,7 @@
 (s/def ::username string?)
 (s/def ::password string?)
 (s/def ::path string?)
-(s/def ::backend #{:mem :file :pg :level})
+(s/def ::backend #{:mem :file :pg :level :rocks})
 (s/def ::host string?)
 (s/def ::port int?)
 (s/def ::uri string?)

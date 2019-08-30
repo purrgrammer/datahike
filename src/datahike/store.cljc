@@ -2,6 +2,7 @@
   (:require [hitchhiker.konserve :as kons]
             [konserve.filestore :as fs]
             [konserve-leveldb.core :as kl]
+            [konserve-rocksdb.core :as kr]
             [konserve-pg.core :as kp]
             [konserve.memory :as mem]
             [superv.async :refer [<?? S]]
@@ -114,3 +115,20 @@
 (defmethod scheme->index :level [_]
   :datahike.index/hitchhiker-tree)
 
+;; rocks
+
+(defmethod empty-store :rocks [{:keys [path]}]
+  (kons/add-hitchhiker-tree-handlers
+    (<?? S (kr/new-rocksdb-store path))))
+
+(defmethod delete-store :rocks [{:keys [path]}]
+  (kr/delete-store path))
+
+(defmethod connect-store :rocks [{:keys [path]}]
+  (<?? S (kr/new-rocksdb-store path)))
+
+(defmethod release-store :rocks [_ store]
+  (kr/release store))
+
+(defmethod scheme->index :rocks [_]
+  :datahike.index/hitchhiker-tree)

@@ -12,6 +12,7 @@
                  [io.replikativ/hitchhiker-tree "0.1.4"]
                  [io.replikativ/superv.async "0.2.9"]
                  [io.replikativ/konserve-leveldb "0.1.2"]
+                 [org.clojars.purrgrammer/konserve-rocksdb "0.1.0"]
                  [io.lambdaforge/datalog-parser "0.1.0"]]
 
   :plugins [

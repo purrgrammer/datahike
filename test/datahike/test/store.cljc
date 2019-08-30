@@ -23,5 +23,8 @@
 (deftest test-db-level-store
   (test-store "datahike:level:///tmp/api-leveldb"))
 
+(deftest test-db-rocks-store
+  (test-store "datahike:rocks:///tmp/api-rocksdb"))
+
 (deftest test-db-mem-store
   (test-store "datahike:mem:///test-mem"))
